@@ -7,3 +7,7 @@ To be used as a starting point for Typescript Express applications.
 Run `npm install && typings install` followed by `npm start` will run the sample application.
 
 Run `npm test` to run mocha tests.
+
+## TODO
+* Add documentation for decorators
+* Add more robust examples
