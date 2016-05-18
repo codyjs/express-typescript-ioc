@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "sourceMap": true,
+        "outDir": "bin",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "listFiles": false,
+        "diagnostics": true,
+        "module": "commonjs"
+    },
+    "compileOnSave": false,
+    "exclude": [
+        "node_modules"
+    ]
+}
