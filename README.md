@@ -1,4 +1,4 @@
-# express-ioc
+# express-typescript-ioc
 Example Express 4.x project in Typescript using [Inversify](https://github.com/inversify/InversifyJS) as an IoC container.
 
 To be used as a starting point for Typescript Express applications.
@@ -49,3 +49,4 @@ class HelloWorldController {
 
 ## TODO
 * Add IoC examples
+* Decouple framework-specific code from composition root
