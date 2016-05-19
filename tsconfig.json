@@ -6,7 +6,7 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "listFiles": false,
-        "diagnostics": true,
+        "diagnostics": false,
         "module": "commonjs"
     },
     "compileOnSave": false,

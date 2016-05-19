@@ -1,26 +1,30 @@
-require('source-map-support').install()
 import 'reflect-metadata';
+require('source-map-support').install()
+
+// test libraries
 import * as sinon from 'sinon';
 import * as request from 'supertest';
 import * as express from 'express';
 import { expect } from 'chai';
-import { injectable } from 'inversify';
-import { Server } from '../server';
-import { getKernel, refreshKernel } from '../kernel';
-import { getContainer, refreshContainer } from '../decorators/route-container';
-import { Controller, Method, Get, Post, Put, Patch, Head, Delete } from '../decorators/decorators';
+
+// dependencies
+import { injectable, IKernel } from 'inversify';
+import { Server } from '../framework/server';
+import { getKernel, refreshKernel } from '../framework/kernel';
+import { getContainer, refreshContainer } from '../framework/route-container';
+import { Controller, Method, Get, Post, Put, Patch, Head, Delete } from '../framework/decorators';
 
 describe('Framework Tests:', () => {
+    var server: Server;
 
-    describe('Integration Tests:', () => {
-        var server: Server;
-
-        beforeEach((done) => {
-            refreshKernel();
-            refreshContainer();
-            done();
-        });
-
+    beforeEach((done) => {
+        refreshKernel();
+        refreshContainer();
+        done();
+    });
+    
+    describe('Routing & Request Handling:', () => {
+        
         it('should add a router to routeContainer', (done) => {
             @injectable()
             @Controller('/')
@@ -47,8 +51,8 @@ describe('Framework Tests:', () => {
             }
             getKernel().bind<TestController>('TestController').to(TestController);
 
-            server = new Server(getContainer());
-            var agent = request(server.app);
+            server = new Server(getKernel());
+            var agent = request(server.build());
 
             var get = () => { agent.get('/').expect(200, 'GET', post) }
             var post = () => { agent.post('/').expect(200, 'POST', put) }
@@ -69,54 +73,13 @@ describe('Framework Tests:', () => {
             }
             getKernel().bind<TestController>('TestController').to(TestController);
 
-            server = new Server(getContainer());
-            request(server.app)
+            server = new Server(getKernel());
+            request(server.build())
                 .propfind('/')
                 .expect(200, 'PROPFIND', done);
-        })
-
-
-        it('should call all middleware in order', (done) => {
-            var result = '';
-            var middleware = {
-                a: function (req, res, next) {
-                    result += 'a';
-                    next();
-                },
-                b: function (req, res, next) {
-                    result += 'b';
-                    next();
-                },
-                c: function (req, res, next) {
-                    result += 'c';
-                    next();
-                }
-            };
-
-            var spyA = sinon.spy(middleware, 'a');
-            var spyB = sinon.spy(middleware, 'b');
-            var spyC = sinon.spy(middleware, 'c');
-
-            @injectable()
-            @Controller('/')
-            class TestController {
-                @Get('/', spyA, spyB, spyC) getTest(req, res) { res.send('GET') }
-            }
-            getKernel().bind<TestController>('TestController').to(TestController);
-
-            server = new Server(getContainer());
-            request(server.app)
-                .get('/')
-                .expect(200, 'GET', function () {
-                    expect(spyA.calledOnce).to.be.true;
-                    expect(spyB.calledOnce).to.be.true;
-                    expect(spyC.calledOnce).to.be.true;
-                    expect(result).to.equal('abc');
-                    done();
-                })
         });
-
-
+        
+        
         it('should use returned values as response', (done) => {
             var result = {'hello': 'world'};
             
@@ -127,10 +90,135 @@ describe('Framework Tests:', () => {
             }
             getKernel().bind<TestController>('TestController').to(TestController);
 
-            server = new Server(getContainer());
-            request(server.app)
+            server = new Server(getKernel());
+            request(server.build())
                 .get('/')
                 .expect(200, JSON.stringify(result), done);
+        });
+    });
+    
+
+    describe('Middleware:', () => {
+        var result: string;
+        var middleware: any = {
+            a: function (req, res, next) {
+                result += 'a';
+                next();
+            },
+            b: function (req, res, next) {
+                result += 'b';
+                next();
+            },
+            c: function (req, res, next) {
+                result += 'c';
+                next();
+            }
+        };
+        var spyA = sinon.spy(middleware, 'a');
+        var spyB = sinon.spy(middleware, 'b');
+        var spyC = sinon.spy(middleware, 'c');
+        
+        beforeEach((done) => {
+            result = '';
+            spyA.reset();
+            spyB.reset();
+            spyC.reset();
+            done(); 
+        });
+        
+        it('should call method-level middleware correctly', (done) => {
+            @injectable()
+            @Controller('/')
+            class TestController {
+                @Get('/', spyA, spyB, spyC) getTest(req, res) { res.send('GET') }
+            }
+            getKernel().bind<TestController>('TestController').to(TestController);
+
+            server = new Server(getKernel());
+            request(server.build())
+                .get('/')
+                .expect(200, 'GET', function () {
+                    expect(spyA.calledOnce).to.be.true;
+                    expect(spyB.calledOnce).to.be.true;
+                    expect(spyC.calledOnce).to.be.true;
+                    expect(result).to.equal('abc');
+                    done();
+                })
+        });
+        
+        
+        it('should call controller-level middleware correctly', (done) => {
+            @injectable()
+            @Controller('/', spyA, spyB, spyC)
+            class TestController {
+                @Get('/') getTest(req, res) { res.send('GET') }
+            }
+            getKernel().bind<TestController>('TestController').to(TestController);
+
+            server = new Server(getKernel());
+            request(server.build())
+                .get('/')
+                .expect(200, 'GET', function () {
+                    expect(spyA.calledOnce).to.be.true;
+                    expect(spyB.calledOnce).to.be.true;
+                    expect(spyC.calledOnce).to.be.true;
+                    expect(result).to.equal('abc');
+                    done();
+                })
+        });
+        
+        
+        it('should call server-level middleware correctly', (done) => {
+            @injectable()
+            @Controller('/')
+            class TestController {
+                @Get('/') getTest(req, res) { res.send('GET') }
+            }
+            getKernel().bind<TestController>('TestController').to(TestController);
+
+            server = new Server(getKernel());
+            
+            server.setConfig((app) => {
+               app.use(spyA);
+               app.use(spyB);
+               app.use(spyC); 
+            });
+            
+            request(server.build())
+                .get('/')
+                .expect(200, 'GET', function () {
+                    expect(spyA.calledOnce).to.be.true;
+                    expect(spyB.calledOnce).to.be.true;
+                    expect(spyC.calledOnce).to.be.true;
+                    expect(result).to.equal('abc');
+                    done();
+                })
+        });
+        
+        
+        it('should call all middleware in correct order', (done) => {
+            @injectable()
+            @Controller('/', spyB)
+            class TestController {
+                @Get('/', spyC) getTest(req, res) { res.send('GET') }
+            }
+            getKernel().bind<TestController>('TestController').to(TestController);
+
+            server = new Server(getKernel());
+            
+            server.setConfig((app) => {
+               app.use(spyA); 
+            });
+            
+            request(server.build())
+                .get('/')
+                .expect(200, 'GET', function () {
+                    expect(spyA.calledOnce).to.be.true;
+                    expect(spyB.calledOnce).to.be.true;
+                    expect(spyC.calledOnce).to.be.true;
+                    expect(result).to.equal('abc');
+                    done();
+                })
         });
     });
 });

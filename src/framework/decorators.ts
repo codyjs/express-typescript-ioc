@@ -1,4 +1,4 @@
-import { getKernel } from '../kernel';
+import { getKernel } from './kernel';
 import { getContainer } from './route-container';
 import * as express from 'express';
 
@@ -19,7 +19,7 @@ export function Method(method: string, path: string | RegExp, ...middleware: Fun
     return function (target: any, key: string, value: any) {
         getContainer().registerHandler(method, path, target, middleware, (req: express.Request, res: express.Response, next: any) => {
             var result = getKernel().get(target.constructor.name)[key](req, res, next);
-            if (result) res.send(result);
+            if (result || !res.headersSent) res.send(result);
         });
     }
 }

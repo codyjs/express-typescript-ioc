@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { Controller, Get } from '../decorators/decorators';
+import { Controller, Get } from '../framework/decorators';
 import { FooService } from '../services/foo-service';
 import { injectable, inject } from 'inversify';
 
@@ -10,8 +10,7 @@ export class FooController {
     constructor( @inject('FooService') private fooService: FooService ) {}
     
     @Get('/')
-    private index(req: express.Request) {
-        console.log(`getting person ${req.query.id}`);
-        return this.fooService.getPerson(req.query.id);
+    private index(req: express.Request): string {
+        return this.fooService.get(req.query.id);
     }
 }

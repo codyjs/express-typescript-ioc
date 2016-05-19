@@ -3,13 +3,12 @@ import { injectable } from 'inversify';
 @injectable()
 export class FooService {
     
-    private people = [
-        'Foo Bar',
-        'Bar Baz'
-    ];
+    private data = {
+      1: 'Foo',
+      2: 'Bar'  
+    };
     
-    public getPerson(id: number) {
-        return this.people[id];
+    public get(id: number): string {
+        return this.data[id];
     }
-    
 }
