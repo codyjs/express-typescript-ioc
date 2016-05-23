@@ -1,3 +1,6 @@
+# NOTICE:
+This repository has been moved to https://github.com/inversify/inversify-express-utils in order to make an (official) Inversify npm package out of it. I'll keep this repository alive for now, but please check out the new one for any updates.
+
 # express-typescript-ioc
 Example Express 4.x project in Typescript using [Inversify](https://github.com/inversify/InversifyJS) as an IoC container.
 
